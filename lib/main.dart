@@ -3549,7 +3549,7 @@ class _SpiritualBedtimeScreenState extends State<SpiritualBedtimeScreen> with Si
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this, initialIndex: widget.initialTab.clamp(0, 1));
     _fetchTimingsForSelectedCity();
   }
 
@@ -3598,7 +3598,7 @@ class _SpiritualBedtimeScreenState extends State<SpiritualBedtimeScreen> with Si
           indicatorWeight: 3,
           tabs: const [
             Tab(icon: Icon(Icons.mosque_rounded), text: 'Namaz Timings'),
-            Tab(icon: Icon(Icons.menu_book_rounded), text: 'Islamic Books'),
+            Tab(icon: Icon(Icons.auto_stories_rounded), text: 'Spiritual E-Books'),
           ],
         ),
       ),
@@ -3837,16 +3837,23 @@ class _SpiritualBedtimeScreenState extends State<SpiritualBedtimeScreen> with Si
   // ---------------------------------------------------------------------------
   // TAB 2: ISLAMIC E-BOOKS & PDF READINGS FOR SPIRITUAL PEACE
   // ---------------------------------------------------------------------------
+  String _selectedReligionFilter = 'All';
+
+  // ---------------------------------------------------------------------------
+  // TAB 2: MULTI-FAITH SPIRITUAL E-BOOKS & PDF LIBRARY FOR INNER CALM
+  // ---------------------------------------------------------------------------
   Widget _buildIslamicBooksTab() {
-    final books = [
+    final allBooks = [
+      // ----------------- ISLAM -----------------
       {
+        'religion': 'Islam ☪️',
         'title': 'Hisn al-Muslim (Fortress of the Muslim)',
         'author': 'Sa\'id ibn Ali ibn Wahf al-Qahtani',
         'category': 'Essential Duas & Adhkar',
         'pages': '180 Pages',
         'color': const Color(0xFF4A3B6B),
         'icon': '🛡️',
-        'description': 'Authentic prophetic supplications for morning, evening, distress, and seeking refuge from anxiety.',
+        'description': 'Authentic prophetic supplications for morning, evening, distress, and seeking refuge from anxiety and panic.',
         'chapters': [
           {
             'title': 'Chapter 1: Supplications for Anxiety & Sorrow',
@@ -3855,48 +3862,59 @@ class _SpiritualBedtimeScreenState extends State<SpiritualBedtimeScreen> with Si
           {
             'title': 'Chapter 2: Morning & Evening Protection',
             'text': 'Recite Surah Al-Ikhlas, Al-Falaq, and An-Nas three times in the morning and evening for complete spiritual protection and peace of mind.'
+          },
+          {
+            'title': 'Chapter 3: When Overwhelmed by Grief',
+            'text': 'Arabic:\nلَا إِلَهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنْتُ مِنَ الظَّالِمِينَ\n\nTranslation:\n"There is no deity except You; exalted are You. Indeed, I have been of the wrongdoers." (Dua of Prophet Yunus AS in the belly of the whale — guarantees relief from distress).'
           }
         ]
       },
       {
+        'religion': 'Islam ☪️',
         'title': 'La Tahzan (Don\'t Be Sad)',
         'author': 'Dr. A\'id al-Qarni',
         'category': 'Overcoming Grief & Anxiety',
         'pages': '320 Pages',
         'color': const Color(0xFF9C89B8),
         'icon': '🕊️',
-        'description': 'A practical Islamic guide to overcoming sadness, racing thoughts, and finding joy in Allah\'s divine decree.',
+        'description': 'A world-renowned practical Islamic guide to overcoming sadness, racing thoughts, and finding joy in Allah\'s divine decree.',
         'chapters': [
           {
             'title': 'Chapter 1: Live in the Present Day',
-            'text': 'Focusing heavily on past regrets or future uncertainty is the root of overthinking. The Prophet (pbuh) taught us to ask Allah for relief from both past grief and future anxiety.'
+            'text': 'Focusing heavily on past regrets or future uncertainty is the root of overthinking. When morning comes upon you, do not anticipate the evening. Live within the boundaries of today and dedicate your effort to this single moment.'
           },
           {
             'title': 'Chapter 2: Hardship is Followed by Ease',
-            'text': '"For indeed, with hardship comes ease" (Quran 94:5). No storm lasts forever. Trust that Allah is preparing a way out for you even when you cannot see it yet.'
+            'text': '"For indeed, with hardship comes ease" (Quran 94:5). No storm lasts forever. The darkest hour of the night is right before the dawn. Trust that Allah is preparing a path of relief for you even when you cannot see it yet.'
+          },
+          {
+            'title': 'Chapter 3: Do Not Carry the Entire World on Your Shoulders',
+            'text': 'Relinquish control over the uncontrollable. What was meant to reach you would never have missed you, and what missed you was never meant to reach you. Find solace in surrender.'
           }
         ]
       },
       {
+        'religion': 'Islam ☪️',
         'title': 'Reclaim Your Heart',
         'author': 'Yasmin Mogahed',
-        'category': 'Healing Overthinking & Attachments',
+        'category': 'Healing Attachments & Overthinking',
         'pages': '240 Pages',
         'color': const Color(0xFF7A7287),
         'icon': '💖',
-        'description': 'Insights on freeing the heart from earthly anxieties, emotional attachments, and finding lasting inner stillness.',
+        'description': 'Profound reflections on freeing the soul from earthly anxieties, emotional dependencies, and finding lasting inner tranquility.',
         'chapters': [
           {
-            'title': 'Chapter 1: The Nature of This Life',
-            'text': 'This world is meant to test us, not to satisfy us completely. When we expect perfection from a temporary world, our minds experience constant friction and anxiety.'
+            'title': 'Chapter 1: The Nature of This World',
+            'text': 'This world is meant to test us, not to fulfill us completely. When we expect perfection or eternity from a temporary world, our minds experience constant friction, fear of loss, and obsessive thoughts.'
           },
           {
-            'title': 'Chapter 2: Anchoring the Soul',
-            'text': 'True calm comes when the heart anchors itself in the Unchanging Creator rather than the changing conditions of life.'
+            'title': 'Chapter 2: Anchoring the Soul in the Unchanging',
+            'text': 'True calm arrives when the heart anchors itself in the Ever-Living Creator rather than the ever-shifting circumstances of daily life.'
           }
         ]
       },
       {
+        'religion': 'Islam ☪️',
         'title': 'Riyad as-Salihin (Meadows of the Righteous)',
         'author': 'Imam An-Nawawi',
         'category': 'Hadith Guidance & Wisdom',
@@ -3906,35 +3924,256 @@ class _SpiritualBedtimeScreenState extends State<SpiritualBedtimeScreen> with Si
         'description': 'Timeless traditions of the Prophet Muhammad (pbuh) on patience, trust in Allah (Tawakkul), and mental fortitude.',
         'chapters': [
           {
-            'title': 'Chapter 1: The Excellence of Tawakkul (Trust in Allah)',
+            'title': 'Chapter 1: The Excellence of Tawakkul (Reliance on Allah)',
             'text': 'The Messenger of Allah (pbuh) said: "If you were to rely upon Allah with the reliance due to Him, He would provide for you just as He provides for the birds: they go out in the morning with empty stomachs and return at dusk full." (Tirmidhi)'
+          },
+          {
+            'title': 'Chapter 2: Patience in Times of Difficulty',
+            'text': '"Wondrous is the affair of the believer, for there is good in every matter of his. If ease reaches him, he is grateful and that is good for him; and if hardship befalls him, he is patient and that is good for him." (Muslim)'
+          }
+        ]
+      },
+
+      // ----------------- CHRISTIANITY -----------------
+      {
+        'religion': 'Christianity ✝️',
+        'title': 'Anxious for Nothing: Finding Calm in a Chaotic World',
+        'author': 'Max Lucado',
+        'category': 'Biblical Peace & Mental Relief',
+        'pages': '220 Pages',
+        'color': const Color(0xFF4361EE),
+        'icon': '✝️',
+        'description': 'A comforting guide based on Philippians 4:6-7 to help you celebrate God\'s goodness, ask for help, leave concerns, and meditate on what is good.',
+        'chapters': [
+          {
+            'title': 'Chapter 1: Celebrate God\'s Goodness',
+            'text': '"Rejoice in the Lord always. I will say it again: Rejoice!" (Philippians 4:4). Anxiety decreases as our awareness of God\'s presence increases. When worries spiral, redirect your attention to His unshakeable faithfulness.'
+          },
+          {
+            'title': 'Chapter 2: Ask God for Help & Peace',
+            'text': '"Do not be anxious about anything, but in every situation, by prayer and petition, with thanksgiving, present your requests to God. And the peace of God, which transcends all understanding, will guard your hearts and minds." (Philippians 4:6-7)'
+          },
+          {
+            'title': 'Chapter 3: Meditate on Good Things',
+            'text': 'Whatever is true, whatever is noble, whatever is right, whatever is pure, whatever is lovely, whatever is admirable — think about such things. Replace intrusive thoughts with gratitude.'
+          }
+        ]
+      },
+      {
+        'religion': 'Christianity ✝️',
+        'title': 'The Practice of the Presence of God',
+        'author': 'Brother Lawrence',
+        'category': 'Devotional Stillness & Peace',
+        'pages': '110 Pages',
+        'color': const Color(0xFF3F37C9),
+        'icon': '🕯️',
+        'description': 'Conversations and letters revealing the art of continual peace through unbroken awareness of the Divine in everyday moments.',
+        'chapters': [
+          {
+            'title': 'Chapter 1: The Habit of Continuous Calm',
+            'text': 'We ought not to be weary of doing little things for the love of God. Do not allow your mind to wander into future fears; remain gently attentive to the divine presence in the work of this very second.'
+          },
+          {
+            'title': 'Chapter 2: Surrendering Inner Tumult',
+            'text': 'When thoughts trouble you, do not fight them with violent resistance. Turn quietly to God, admit your weakness, and ask for His stillness to govern your mind.'
+          }
+        ]
+      },
+
+      // ----------------- HINDUISM -----------------
+      {
+        'religion': 'Hinduism 🕉️',
+        'title': 'The Bhagavad Gita: Song of the Divine',
+        'author': 'Sage Ved Vyasa',
+        'category': 'Mastering the Restless Mind',
+        'pages': '280 Pages',
+        'color': const Color(0xFFF77F00),
+        'icon': '🕉️',
+        'description': 'Lord Krishna\'s timeless wisdom to Arjuna on conquering self-doubt, anxiety, and learning Nishkama Karma (action without attachment to results).',
+        'chapters': [
+          {
+            'title': 'Chapter 1: Taming the Restless Mind (Chitta)',
+            'text': 'Sanskrit:\nचञ्चलं हि मनः कृष्ण प्रमाथि बलवद्दृढम्। तस्याहं निग्रहं मन्ये वायोरिव सुदुष्करम्॥\n\nTranslation:\nArjuna says: "The mind is restless, turbulent, obstinate, and very strong, O Krishna. Controlling it seems as difficult as taming the wind."\n\nKrishna replies: "Undoubtedly the mind is difficult to restrain, but by regular spiritual practice (Abhyasa) and detachment from outcome (Vairagya), it can be mastered."'
+          },
+          {
+            'title': 'Chapter 2: Detachment from Outcomes (Nishkama Karma)',
+            'text': '"You have a right only to perform your prescribed duty, but never to the fruits of action. Never consider yourself the sole cause of the results, nor be attached to inaction." (Gita 2:47) — When you release obsession over the outcome, overthinking dissolves.'
+          },
+          {
+            'title': 'Chapter 3: The State of Equanimity (Sthitaprajna)',
+            'text': 'One whose mind is undisturbed in sorrow, who has no craving for pleasure, and is free from passion, fear, and anger, is called a sage of steady wisdom.'
+          }
+        ]
+      },
+      {
+        'religion': 'Hinduism 🕉️',
+        'title': 'The Upanishads: Wisdom of the True Self',
+        'author': 'Vedic Risis',
+        'category': 'Transcendence & Inner Stillness',
+        'pages': '200 Pages',
+        'color': const Color(0xFFD90429),
+        'icon': '🪷',
+        'description': 'Ancient philosophical insights on discovering the eternal witness (Atman) behind fleeting thoughts, anxiety, and fear.',
+        'chapters': [
+          {
+            'title': 'Chapter 1: You Are the Witness, Not the Thought',
+            'text': '"The mind is like a turbulent river, but the Self (Atman) is the silent riverbank. Observe the passing waves of anxiety without diving into them. You are the quiet consciousness in which thoughts rise and set."'
+          },
+          {
+            'title': 'Chapter 2: Peace in the Unified Divine (Brahman)',
+            'text': '"When all desires clinging to the heart are surrendered, then mortal man becomes immortal. Lead me from the unreal to the real, from darkness to light, from fear to peace."'
+          }
+        ]
+      },
+
+      // ----------------- BUDDHISM -----------------
+      {
+        'religion': 'Buddhism ☸️',
+        'title': 'The Miracle of Mindfulness',
+        'author': 'Thich Nhat Hanh',
+        'category': 'Present-Moment Awareness & Breathing',
+        'pages': '160 Pages',
+        'color': const Color(0xFF0077B6),
+        'icon': '☸️',
+        'description': 'A warm, practical manual on using conscious breathing and present-moment awareness to dissolve stress and stop overthinking.',
+        'chapters': [
+          {
+            'title': 'Chapter 1: The Breath is the Anchor',
+            'text': '"Breathing in, I calm my body and mind. Breathing out, I smile. Dwelling in the present moment, I know this is the only moment." When your mind races into hypothetical futures, return instantly to your physical in-breath and out-breath.'
+          },
+          {
+            'title': 'Chapter 2: Washing the Dishes to Wash the Dishes',
+            'text': 'While washing the dishes, one should only be washing the dishes. If we are thinking about the cup of tea that awaits us later, we are not living during the time we are washing. Practice total immersion in what you are doing now.'
+          },
+          {
+            'title': 'Chapter 3: Releasing the Burden of Worry',
+            'text': 'Worry does not prevent tomorrow\'s sorrow; it only robs today of its strength. Smile gently at your worry, acknowledge it as an uninvited guest, and let it pass through your awareness without gripping it.'
+          }
+        ]
+      },
+      {
+        'religion': 'Buddhism ☸️',
+        'title': 'The Dhammapada: Verses of Wisdom',
+        'author': 'Gautama Buddha',
+        'category': 'Mastery of the Mind',
+        'pages': '190 Pages',
+        'color': const Color(0xFF023E8A),
+        'icon': '🪨',
+        'description': 'Core teachings of the Buddha on training the mind, overcoming mental suffering, and cultivating unbreakable peace.',
+        'chapters': [
+          {
+            'title': 'Chapter 1: The Fore-runner of All States',
+            'text': '"Mind precedes all mental states. Mind is their chief; they are all mind-wrought. If with an agitated mind one speaks or acts, suffering follows him close behind. If with a pure and calm mind one speaks or acts, happiness follows like a shadow that never departs."'
+          },
+          {
+            'title': 'Chapter 2: The Unguarded Mind vs The Mastered Mind',
+            'text': '"Like an archer straightens an arrow, the wise person straightens the trembling, unsteady mind, which is so difficult to guard and difficult to restrain. A well-trained mind brings true happiness."'
+          }
+        ]
+      },
+
+      // ----------------- SIKHISM -----------------
+      {
+        'religion': 'Sikhism 🪯',
+        'title': 'Japji Sahib: Song of the Soul',
+        'author': 'Guru Nanak Dev Ji',
+        'category': 'Divine Oneness & Meditation',
+        'pages': '130 Pages',
+        'color': const Color(0xFFFFB703),
+        'icon': '🪯',
+        'description': 'The foundational morning prayer of Sikhism on recognizing divine order (Hukam), dissolving the restless ego, and finding peace in Naam.',
+        'chapters': [
+          {
+            'title': 'Chapter 1: Accepting the Divine Order (Hukam)',
+            'text': 'Gurmukhi:\nਹੁਕਮੈ ਅੰਦਰਿ ਸਭੁ ਕੋ ਬਾਹਰਿ ਹੁਕਮ ਨ ਕੋਇ ॥ ਨਾਨਕ ਹੁਕਮੈ ਜੇ ਬੁਝੈ ਤ ਹਉਮੈ ਕਹੈ ਨ ਕੋਇ ॥\n\nTranslation:\n"Everyone is subject to the Divine Will; nothing is beyond it. O Nanak, one who understands the Divine Will will never speak in ego or anxiety." When you accept that the universe is governed by a benevolent order, inner struggle ceases.'
+          },
+          {
+            'title': 'Chapter 2: The Cleansing Power of Remembrance (Naam)',
+            'text': 'When the mind is polluted and burdened by fear, anxiety, and repetitive thoughts, it is cleansed and restored to radiant stillness through meditation on the Divine Name (Naam Simran).'
+          }
+        ]
+      },
+      {
+        'religion': 'Sikhism 🪯',
+        'title': 'Sukhmani Sahib: The Psalm of Peace',
+        'author': 'Guru Arjan Dev Ji',
+        'category': 'Soothe Mental Agitation & Fear',
+        'pages': '210 Pages',
+        'color': const Color(0xFFFB8500),
+        'icon': '☀️',
+        'description': 'Composed specifically to bring solace to troubled minds, relieve sorrow, and instill deep spiritual contentment.',
+        'chapters': [
+          {
+            'title': 'Chapter 1: The Treasure of Inner Stillness (Sukhmani)',
+            'text': '"Sukhmani (Jewel of Peace) fills the heart with supreme nectar. Meditating on the Divine brings calm to the restless mind and quenches the burning fires of anxiety and doubt."'
+          },
+          {
+            'title': 'Chapter 2: Refuge from Fear of the Future',
+            'text': '"Why do you worry, O mind, when the Sustainer of all life provides for the creatures in the sea and on land? Surrender your burdens and rest in divine trust."'
+          }
+        ]
+      },
+
+      // ----------------- STOICISM -----------------
+      {
+        'religion': 'Stoicism 🏛️',
+        'title': 'Meditations: Personal Journal of Stoic Calm',
+        'author': 'Marcus Aurelius (Roman Emperor)',
+        'category': 'Stoic Philosophy & Mental Fortitude',
+        'pages': '230 Pages',
+        'color': const Color(0xFF582F0E),
+        'icon': '🏛️',
+        'description': 'Personal private journal of Marcus Aurelius on the dichotomy of control, managing anxiety, and finding sanctuary inside your own mind.',
+        'chapters': [
+          {
+            'title': 'Chapter 1: The Inner Citadel',
+            'text': '"Nowhere can man find a quieter or more untroubled retreat than in his own soul. Constantly grant yourself this retreat, and renew yourself. Look directly at thoughts and ask: Is this within my control or outside my control?"'
+          },
+          {
+            'title': 'Chapter 2: You Have Power Over Your Mind, Not Outside Events',
+            'text': '"You have power over your mind — not outside events. Realize this, and you will find your strength. If you are distressed by anything external, the pain is not due to the thing itself, but to your estimate of it; and this you have the power to revoke at any moment."'
+          },
+          {
+            'title': 'Chapter 3: Do Not Suffer Anticipated Sorrows',
+            'text': '"Never let the future disturb you. You will meet it, if you have to, with the same weapons of reason which today arm you against the present."'
           }
         ]
       },
     ];
+
+    final religionFilters = ['All', 'Islam ☪️', 'Christianity ✝️', 'Hinduism 🕉️', 'Buddhism ☸️', 'Sikhism 🪯', 'Stoicism 🏛️'];
+
+    final filteredBooks = _selectedReligionFilter == 'All'
+        ? allBooks
+        : allBooks.where((b) => b['religion'] == _selectedReligionFilter).toList();
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Banner
           Container(
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              color: const Color(0xFFF0E6EF),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF9C89B8), Color(0xFF7A7287)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               children: [
-                const Icon(Icons.library_books_rounded, color: Color(0xFF9C89B8), size: 28),
+                const Icon(Icons.auto_stories_rounded, color: Colors.white, size: 28),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Islamic E-Books & Wisdom PDF Library 📚', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black)),
+                      Text('Spiritual & Faith E-Books Library 📚', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white)),
                       const SizedBox(height: 2),
-                      Text('Read calming spiritual books designed to cure overthinking & anxiety.', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: const Color(0xFF7A7287))),
+                      Text('Explore sacred wisdom across religions to cure overthinking, anxiety & find peace.', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: Colors.white.withValues(alpha: 0.9))),
                     ],
                   ),
                 ),
@@ -3942,15 +4181,57 @@ class _SpiritualBedtimeScreenState extends State<SpiritualBedtimeScreen> with Si
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
 
+          // Religion Filter Pills
+          Text('Filter by Faith / Tradition:', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black)),
+          const SizedBox(height: 10),
+
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: religionFilters.map((rel) {
+                final isSelected = _selectedReligionFilter == rel;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: FilterChip(
+                    label: Text(
+                      rel,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        color: isSelected ? Colors.white : const Color(0xFF2C2543),
+                      ),
+                    ),
+                    selected: isSelected,
+                    selectedColor: const Color(0xFF9C89B8),
+                    backgroundColor: const Color(0xFFF0E6EF),
+                    checkmarkColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: isSelected ? const Color(0xFF9C89B8) : Colors.transparent),
+                    ),
+                    onSelected: (val) {
+                      setState(() {
+                        _selectedReligionFilter = rel;
+                      });
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+
+          const SizedBox(height: 18),
+
+          // Book List
           ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: books.length,
+            itemCount: filteredBooks.length,
             separatorBuilder: (c, i) => const SizedBox(height: 16),
             itemBuilder: (context, index) {
-              final book = books[index];
+              final book = filteredBooks[index];
               return Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
@@ -3968,8 +4249,9 @@ class _SpiritualBedtimeScreenState extends State<SpiritualBedtimeScreen> with Si
                       width: 54,
                       height: 74,
                       decoration: BoxDecoration(
-                        color: book['color'] as Color,
+                        color: (book['color'] as Color).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: (book['color'] as Color).withValues(alpha: 0.3)),
                       ),
                       child: Center(
                         child: Text(book['icon'] as String, style: const TextStyle(fontSize: 26)),
@@ -3980,6 +4262,22 @@ class _SpiritualBedtimeScreenState extends State<SpiritualBedtimeScreen> with Si
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF0E6EF),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  book['religion'] as String,
+                                  style: GoogleFonts.plusJakartaSans(fontSize: 10, fontWeight: FontWeight.bold, color: const Color(0xFF7A7287)),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
                           Text(book['title'] as String, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black)),
                           const SizedBox(height: 2),
                           Text('By ${book['author']}', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: const Color(0xFF7A7287))),
@@ -4053,7 +4351,7 @@ class _SpiritualBedtimeScreenState extends State<SpiritualBedtimeScreen> with Si
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(book['title'] as String, overflow: TextOverflow.ellipsis, style: GoogleFonts.plusJakartaSans(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
-                            Text(book['category'] as String, style: GoogleFonts.plusJakartaSans(color: const Color(0xFF9C89B8), fontWeight: FontWeight.bold, fontSize: 12)),
+                            Text('${book['religion']} • ${book['category']}', style: GoogleFonts.plusJakartaSans(color: const Color(0xFF9C89B8), fontWeight: FontWeight.bold, fontSize: 12)),
                           ],
                         ),
                       ),

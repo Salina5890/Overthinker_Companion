@@ -39,3 +39,4 @@
 key.properties
 **/*.keystore
 **/*.jks
+scratch/

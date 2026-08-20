@@ -850,7 +850,23 @@ class _MainNavigationScaffoldState extends State<MainNavigationScaffold> {
     final pages = [
       HomeScreen(
         moodLogs: _moodLogs,
-        onMoodLogged: (mood, level) {
+        onMoodLogged: (mood, level) async {
+          final uid = FirebaseAuth.instance.currentUser?.uid;
+          if (uid != null) {
+            try {
+              await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(uid)
+                  .collection('mood_logs')
+                  .add({
+                'mood': mood,
+                'level': level,
+                'timestamp': FieldValue.serverTimestamp(),
+              });
+            } catch (e) {
+              debugPrint('Firestore mood log error: $e');
+            }
+          }
           setState(() {
             _moodLogs.add({
               'day': 'Today',
@@ -1154,55 +1170,8 @@ class HomeScreen extends StatelessWidget {
               ),
               const SizedBox(height: 14),
 
-              // Islamic Prayer Timings & Faith Sanctuary Banner
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SpiritualBedtimeScreen()));
-                },
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF7A7287), Color(0xFF9C89B8)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(color: const Color(0xFF9C89B8).withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4)),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
-                        child: const Icon(Icons.mosque_rounded, color: Color(0xFFD4C5F0), size: 28),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Namaz Timings & Faith Sanctuary 🕌', style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                            const SizedBox(height: 4),
-                            Text('Live Prayer Times, Sunnah Duas & Bedtime Peace', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: Colors.white.withValues(alpha: 0.9))),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text('VIEW', style: GoogleFonts.plusJakartaSans(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
-                      ),
-                    ],
-                  ),
-                ).animate().fadeIn(delay: 300.ms).slideX(),
-              ),
+              // Dynamic Faith & Spiritual Sanctuary Banner (Namaz Timings only for Muslims)
+              const _FaithSanctuaryBanner(),
 
               const SizedBox(height: 28),
 
@@ -2491,6 +2460,144 @@ class _DailyFaithAffirmationCardState extends State<_DailyFaithAffirmationCard> 
 }
 
 // =============================================================================
+// FAITH & SPIRITUAL SANCTUARY BANNER (Namaz Timings shown exclusively to Muslims)
+// =============================================================================
+class _FaithSanctuaryBanner extends StatelessWidget {
+  const _FaithSanctuaryBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return const SizedBox.shrink();
+
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
+      builder: (context, snapshot) {
+        String userFaith = 'Islam';
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final data = snapshot.data!.data() as Map<String, dynamic>?;
+          userFaith = data?['faith'] ?? 'Islam';
+        }
+
+        final isMuslim = userFaith == 'Islam';
+
+        String title = 'Namaz Timings & Faith Sanctuary 🕌';
+        String subtitle = 'Live Prayer Times, Sunnah Duas & Bedtime Peace';
+        IconData icon = Icons.mosque_rounded;
+
+        if (!isMuslim) {
+          if (userFaith == 'Christianity') {
+            title = 'Christian Sanctuary & E-Books ✝️';
+            subtitle = 'Sacred Scriptures, Devotionals & Inner Peace';
+            icon = Icons.auto_stories_rounded;
+          } else if (userFaith == 'Hinduism') {
+            title = 'Spiritual Sanctuary & Wisdom 🕉️';
+            subtitle = 'Gita Wisdom, Mantras & Calming Readings';
+            icon = Icons.auto_stories_rounded;
+          } else if (userFaith == 'Buddhism') {
+            title = 'Mindfulness & Dhamma Sanctuary ☸️';
+            subtitle = 'Dhammapada Verses, Meditations & Peace';
+            icon = Icons.self_improvement_rounded;
+          } else if (userFaith == 'Judaism') {
+            title = 'Jewish Sanctuary & Psalms ✡️';
+            subtitle = 'Tehillim, Sacred Wisdom & Evening Rest';
+            icon = Icons.auto_stories_rounded;
+          } else {
+            title = 'Spiritual Wisdom & Mindfulness 🌿';
+            subtitle = 'Universal Teachings, Reflections & Inner Calm';
+            icon = Icons.auto_stories_rounded;
+          }
+        }
+
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => SpiritualBedtimeScreen(
+                  userFaith: userFaith,
+                  initialTab: isMuslim ? 0 : 1,
+                ),
+              ),
+            );
+          },
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF7A7287), Color(0xFF9C89B8)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF9C89B8).withValues(alpha: 0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: const Color(0xFFD4C5F0), size: 28),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.9),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'VIEW',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ).animate().fadeIn(delay: 300.ms).slideX(),
+        );
+      },
+    );
+  }
+}
+
+// =============================================================================
 // DAILY AFFIRMATION CARD & VERSES
 // =============================================================================
 class _DailyAffirmationCard extends StatefulWidget {
@@ -3498,14 +3605,16 @@ class BedtimePrayerStep {
 
 class SpiritualBedtimeScreen extends StatefulWidget {
   final int initialTab;
-  const SpiritualBedtimeScreen({super.key, this.initialTab = 0});
+  final String? userFaith;
+  const SpiritualBedtimeScreen({super.key, this.initialTab = 0, this.userFaith});
 
   @override
   State<SpiritualBedtimeScreen> createState() => _SpiritualBedtimeScreenState();
 }
 
 class _SpiritualBedtimeScreenState extends State<SpiritualBedtimeScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+  TabController? _tabController;
+  late String _userFaith;
 
   // Islamic Timings State
   String _selectedCity = 'Karachi, Pakistan';
@@ -3546,16 +3655,61 @@ class _SpiritualBedtimeScreenState extends State<SpiritualBedtimeScreen> with Si
     'Kuala Lumpur, Malaysia',
   ];
 
+  String _selectedReligionFilter = 'All';
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this, initialIndex: widget.initialTab.clamp(0, 1));
-    _fetchTimingsForSelectedCity();
+    _userFaith = widget.userFaith ?? 'Islam';
+
+    if (_userFaith == 'Christianity') {
+      _selectedReligionFilter = 'Christianity ✝️';
+    } else if (_userFaith == 'Hinduism') {
+      _selectedReligionFilter = 'Hinduism 🕉️';
+    } else if (_userFaith == 'Buddhism') {
+      _selectedReligionFilter = 'Buddhism ☸️';
+    } else if (_userFaith == 'Judaism') {
+      _selectedReligionFilter = 'Judaism ✡️';
+    } else if (_userFaith == 'Islam') {
+      _selectedReligionFilter = 'Islam ☪️';
+    } else {
+      _selectedReligionFilter = 'All';
+    }
+
+    if (_userFaith == 'Islam') {
+      _tabController = TabController(length: 2, vsync: this, initialIndex: widget.initialTab.clamp(0, 1));
+      _fetchTimingsForSelectedCity();
+    }
+
+    _loadUserFaithIfUnset();
+  }
+
+  Future<void> _loadUserFaithIfUnset() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      if (doc.exists && mounted) {
+        final faith = doc.data()?['faith'] as String?;
+        if (faith != null && faith != _userFaith) {
+          setState(() {
+            _userFaith = faith;
+            if (_userFaith == 'Islam') {
+              _tabController?.dispose();
+              _tabController = TabController(length: 2, vsync: this, initialIndex: 0);
+              _fetchTimingsForSelectedCity();
+            } else {
+              _tabController?.dispose();
+              _tabController = null;
+            }
+          });
+        }
+      }
+    }
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
@@ -3577,6 +3731,60 @@ class _SpiritualBedtimeScreenState extends State<SpiritualBedtimeScreen> with Si
 
   @override
   Widget build(BuildContext context) {
+    final isMuslim = _userFaith == 'Islam';
+
+    String appBarTitle = 'Namaz & Faith Sanctuary 🕌';
+    if (!isMuslim) {
+      if (_userFaith == 'Christianity') {
+        appBarTitle = 'Christian Faith Sanctuary ✝️';
+      } else if (_userFaith == 'Hinduism') {
+        appBarTitle = 'Spiritual Sanctuary 🕉️';
+      } else if (_userFaith == 'Buddhism') {
+        appBarTitle = 'Dhamma Sanctuary ☸️';
+      } else if (_userFaith == 'Judaism') {
+        appBarTitle = 'Jewish Faith Sanctuary ✡️';
+      } else {
+        appBarTitle = 'Spiritual Sanctuary 🌿';
+      }
+    }
+
+    if (isMuslim && _tabController != null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFFFFFFF),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFFFFFFFF),
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF9C89B8)),
+            onPressed: () => Navigator.pop(context),
+          ),
+          title: Text(
+            appBarTitle,
+            style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 19),
+          ),
+          bottom: TabBar(
+            controller: _tabController,
+            labelColor: const Color(0xFF9C89B8),
+            unselectedLabelColor: const Color(0xFF7A7287),
+            indicatorColor: const Color(0xFF9C89B8),
+            indicatorWeight: 3,
+            tabs: const [
+              Tab(icon: Icon(Icons.mosque_rounded), text: 'Namaz Timings'),
+              Tab(icon: Icon(Icons.auto_stories_rounded), text: 'Spiritual E-Books'),
+            ],
+          ),
+        ),
+        body: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildIslamicPrayerTimingsTab(),
+            _buildIslamicBooksTab(),
+          ],
+        ),
+      );
+    }
+
+    // For non-Muslim users: Render Spiritual & Faith Library directly without Namaz Timings tab
     return Scaffold(
       backgroundColor: const Color(0xFFFFFFFF),
       appBar: AppBar(
@@ -3587,28 +3795,11 @@ class _SpiritualBedtimeScreenState extends State<SpiritualBedtimeScreen> with Si
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Namaz & Faith Sanctuary 🕌',
+          appBarTitle,
           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 19),
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: const Color(0xFF9C89B8),
-          unselectedLabelColor: const Color(0xFF7A7287),
-          indicatorColor: const Color(0xFF9C89B8),
-          indicatorWeight: 3,
-          tabs: const [
-            Tab(icon: Icon(Icons.mosque_rounded), text: 'Namaz Timings'),
-            Tab(icon: Icon(Icons.auto_stories_rounded), text: 'Spiritual E-Books'),
-          ],
-        ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildIslamicPrayerTimingsTab(),
-          _buildIslamicBooksTab(),
-        ],
-      ),
+      body: _buildIslamicBooksTab(),
     );
   }
 
@@ -3833,11 +4024,6 @@ class _SpiritualBedtimeScreenState extends State<SpiritualBedtimeScreen> with Si
       ),
     );
   }
-
-  // ---------------------------------------------------------------------------
-  // TAB 2: ISLAMIC E-BOOKS & PDF READINGS FOR SPIRITUAL PEACE
-  // ---------------------------------------------------------------------------
-  String _selectedReligionFilter = 'All';
 
   // ---------------------------------------------------------------------------
   // TAB 2: MULTI-FAITH SPIRITUAL E-BOOKS & PDF LIBRARY FOR INNER CALM
@@ -4114,6 +4300,44 @@ class _SpiritualBedtimeScreenState extends State<SpiritualBedtimeScreen> with Si
         ]
       },
 
+      // ----------------- JUDAISM -----------------
+      {
+        'religion': 'Judaism ✡️',
+        'title': 'Tehillim (The Book of Psalms)',
+        'author': 'King David (David HaMelekh)',
+        'category': 'Sacred Solace & Comfort',
+        'pages': '150 Pages',
+        'color': const Color(0xFF1D3557),
+        'icon': '✡️',
+        'description': 'Timeless prayers of solace, turning to the Almighty in moments of emotional turmoil, finding refuge and peace.',
+        'chapters': [
+          {
+            'title': 'Psalm 23: The Lord is My Shepherd',
+            'text': 'Hebrew:\nמִזְמוֹר לְדָוִד יְהוָה רֹעִי לֹא אֶحְסָר\n\nTranslation:\n"The Lord is my shepherd; I shall not want. Even though I walk through the valley of the shadow of death, I will fear no evil, for You are with me; Your rod and Your staff, they comfort me."'
+          },
+          {
+            'title': 'Psalm 121: The Keeper of Peace',
+            'text': '"I lift up my eyes to the mountains—where does my help come from? My help comes from the Lord, Maker of heaven and earth. He will not let your foot slip; He who watches over you will neither slumber nor sleep."'
+          }
+        ]
+      },
+      {
+        'religion': 'Judaism ✡️',
+        'title': 'Duties of the Heart (Sha\'ar HaBitachon)',
+        'author': 'Rabbi Bahya ibn Paquda',
+        'category': 'Bitachon (Trust in God) & Calm',
+        'pages': '240 Pages',
+        'color': const Color(0xFF457B9D),
+        'icon': '🕯️',
+        'description': 'The definitive spiritual classic on trusting God completely, relinquishing anxious thoughts, and acquiring tranquil serenity.',
+        'chapters': [
+          {
+            'title': 'Chapter 1: The Tranquility of Bitachon',
+            'text': '"One who trusts in the Creator is relieved of worldly worries, fears of future outcomes, and mental fatigue. His mind is tranquil and his spirit is at peace, knowing everything is guided with supreme wisdom."'
+          }
+        ]
+      },
+
       // ----------------- STOICISM -----------------
       {
         'religion': 'Stoicism 🏛️',
@@ -4141,7 +4365,7 @@ class _SpiritualBedtimeScreenState extends State<SpiritualBedtimeScreen> with Si
       },
     ];
 
-    final religionFilters = ['All', 'Islam ☪️', 'Christianity ✝️', 'Hinduism 🕉️', 'Buddhism ☸️', 'Sikhism 🪯', 'Stoicism 🏛️'];
+    final religionFilters = ['All', 'Islam ☪️', 'Christianity ✝️', 'Hinduism 🕉️', 'Buddhism ☸️', 'Judaism ✡️', 'Sikhism 🪯', 'Stoicism 🏛️'];
 
     final filteredBooks = _selectedReligionFilter == 'All'
         ? allBooks
@@ -4593,8 +4817,22 @@ class ProfileSettingsScreen extends StatefulWidget {
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   bool _alarmEnabled = true;
   TimeOfDay _alarmTime = const TimeOfDay(hour: 22, minute: 30);
+  String _currentFaith = 'Islam';
 
-  void _testAlarmNotification() {
+  final List<String> _faithOptions = [
+    'Islam',
+    'Christianity',
+    'Hinduism',
+    'Buddhism',
+    'Judaism',
+    'Spiritual / Universal',
+  ];
+
+  void _testAlarmNotification(String userFaith) {
+    final isMuslim = userFaith == 'Islam';
+    final title = isMuslim ? 'Pre-Sleep Prayer Alarm 🌙' : 'Pre-Sleep Mindfulness Alarm 🌙';
+    final msg = isMuslim ? 'Time for your bedtime Sunnah prayers & Dua.' : 'Time for peaceful reflection and inner stillness.';
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         backgroundColor: const Color(0xFF9C89B8),
@@ -4610,8 +4848,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Pre-Sleep Prayer Alarm 🌙', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: Colors.white)),
-                  Text('Time for your bedtime Sunnah prayers & Dua.', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: Colors.white70)),
+                  Text(title, style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: Colors.white)),
+                  Text(msg, style: GoogleFonts.plusJakartaSans(fontSize: 12, color: Colors.white70)),
                 ],
               ),
             ),
@@ -4623,6 +4861,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final uid = user?.uid;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFFFFF),
       appBar: AppBar(
@@ -4637,110 +4878,343 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 19),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          // Bedtime Alarm Card
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: const Color(0xFFF0E6EF)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: uid == null
+          ? const Center(child: Text('User not signed in'))
+          : StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance.collection('users').doc(uid).snapshots(),
+              builder: (context, snapshot) {
+                String userFaith = _currentFaith;
+                String userName = user?.displayName ?? 'Companion User';
+                String userEmail = user?.email ?? '';
+                int userAge = 0;
+
+                if (snapshot.hasData && snapshot.data!.exists) {
+                  final data = snapshot.data!.data() as Map<String, dynamic>?;
+                  userFaith = data?['faith'] ?? _currentFaith;
+                  userName = data?['name'] ?? userName;
+                  userAge = data?['age'] ?? 0;
+                  userEmail = data?['email'] ?? userEmail;
+                }
+
+                final isMuslim = userFaith == 'Islam';
+
+                return ListView(
+                  padding: const EdgeInsets.all(20),
                   children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.alarm_on_rounded, color: Color(0xFF9C89B8), size: 28),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Pre-Sleep Pray Alarm', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black)),
-                            Text('Daily Reminder to pray before bed', style: GoogleFonts.plusJakartaSans(fontSize: 12, color: const Color(0xFF7A7287))),
-                          ],
+                    // Profile Header Card
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFF0E6EF), Color(0xFFE8DDFB)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                      ],
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: const Color(0xFF9C89B8).withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF9C89B8),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF9C89B8).withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(Icons.person_rounded, color: Colors.white, size: 30),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  userName,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  userEmail,
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 12,
+                                    color: const Color(0xFF7A7287),
+                                  ),
+                                ),
+                                if (userAge > 0) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Age: $userAge years',
+                                    style: GoogleFonts.plusJakartaSans(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF9C89B8),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    Switch(
-                      value: _alarmEnabled,
-                      activeTrackColor: const Color(0xFF9C89B8),
-                      onChanged: (val) => setState(() => _alarmEnabled = val),
+
+                    const SizedBox(height: 20),
+
+                    // Faith & Spiritual Background Switcher Card
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: const Color(0xFFF0E6EF)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF0E6EF),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFF9C89B8), size: 22),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Faith / Spiritual Tradition',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                    Text(
+                                      isMuslim
+                                          ? 'Namaz Timings & Islamic Duas are active'
+                                          : 'Spiritual Sanctuary tailored to your faith',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        fontSize: 12,
+                                        color: const Color(0xFF7A7287),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF9F7FA),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: const Color(0xFFF0E6EF)),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _faithOptions.contains(userFaith) ? userFaith : 'Islam',
+                                isExpanded: true,
+                                icon: const Icon(Icons.arrow_drop_down_rounded, color: Color(0xFF9C89B8)),
+                                items: _faithOptions.map((faith) {
+                                  String emoji = '🌿';
+                                  if (faith == 'Islam') emoji = '🕌';
+                                  if (faith == 'Christianity') emoji = '✝️';
+                                  if (faith == 'Hinduism') emoji = '🕉️';
+                                  if (faith == 'Buddhism') emoji = '☸️';
+                                  if (faith == 'Judaism') emoji = '✡️';
+                                  return DropdownMenuItem(
+                                    value: faith,
+                                    child: Text(
+                                      '$emoji  $faith',
+                                      style: GoogleFonts.plusJakartaSans(
+                                        color: Colors.black,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (val) async {
+                                  if (val != null && val != userFaith) {
+                                    setState(() => _currentFaith = val);
+                                    await FirebaseFirestore.instance
+                                        .collection('users')
+                                        .doc(uid)
+                                        .update({'faith': val});
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Faith updated to $val. Features refreshed! ✨'),
+                                          backgroundColor: const Color(0xFF9C89B8),
+                                          behavior: SnackBarBehavior.floating,
+                                          duration: const Duration(seconds: 2),
+                                        ),
+                                      );
+                                    }
+                                  }
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                const Divider(color: Color(0xFFF0E6EF)),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Alarm Time:', style: GoogleFonts.plusJakartaSans(color: const Color(0xFF7A7287), fontSize: 14)),
-                    TextButton.icon(
-                      style: TextButton.styleFrom(backgroundColor: const Color(0xFFF0E6EF)),
-                      onPressed: () async {
-                        final picked = await showTimePicker(context: context, initialTime: _alarmTime);
-                        if (picked != null) setState(() => _alarmTime = picked);
-                      },
-                      icon: const Icon(Icons.access_time_rounded, color: Color(0xFF9C89B8), size: 18),
-                      label: Text(
-                        _alarmTime.format(context),
-                        style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: const Color(0xFF9C89B8), fontSize: 16),
+
+                    const SizedBox(height: 20),
+
+                    // Bedtime Alarm Card
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: const Color(0xFFF0E6EF)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.alarm_on_rounded, color: Color(0xFF9C89B8), size: 28),
+                                  const SizedBox(width: 12),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        isMuslim ? 'Pre-Sleep Prayer Alarm' : 'Pre-Sleep Reflection Alarm',
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                      Text(
+                                        isMuslim
+                                            ? 'Daily Reminder to pray before bed'
+                                            : 'Daily reminder for quiet calm before bed',
+                                        style: GoogleFonts.plusJakartaSans(
+                                          fontSize: 12,
+                                          color: const Color(0xFF7A7287),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              Switch(
+                                value: _alarmEnabled,
+                                activeTrackColor: const Color(0xFF9C89B8),
+                                onChanged: (val) => setState(() => _alarmEnabled = val),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          const Divider(color: Color(0xFFF0E6EF)),
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Alarm Time:',
+                                style: GoogleFonts.plusJakartaSans(
+                                  color: const Color(0xFF7A7287),
+                                  fontSize: 14,
+                                ),
+                              ),
+                              TextButton.icon(
+                                style: TextButton.styleFrom(backgroundColor: const Color(0xFFF0E6EF)),
+                                onPressed: () async {
+                                  final picked = await showTimePicker(context: context, initialTime: _alarmTime);
+                                  if (picked != null) setState(() => _alarmTime = picked);
+                                },
+                                icon: const Icon(Icons.access_time_rounded, color: Color(0xFF9C89B8), size: 18),
+                                label: Text(
+                                  _alarmTime.format(context),
+                                  style: GoogleFonts.plusJakartaSans(
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF9C89B8),
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Color(0xFF9C89B8)),
+                                foregroundColor: const Color(0xFF9C89B8),
+                              ),
+                              onPressed: () => _testAlarmNotification(userFaith),
+                              icon: const Icon(Icons.notifications_active_outlined, size: 18),
+                              label: const Text('Test Pre-Sleep Alarm Notification'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    // Sign Out Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFFF0F0),
+                          foregroundColor: Colors.redAccent,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        ),
+                        onPressed: () async {
+                          await FirebaseAuth.instance.signOut();
+                          if (context.mounted) Navigator.pop(context);
+                        },
+                        icon: const Icon(Icons.logout_rounded),
+                        label: Text('Sign Out', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 15)),
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF9C89B8)),
-                      foregroundColor: const Color(0xFF9C89B8),
-                    ),
-                    onPressed: _testAlarmNotification,
-                    icon: const Icon(Icons.notifications_active_outlined, size: 18),
-                    label: const Text('Test Pre-Sleep Alarm Notification'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 30),
-          
-          // Sign Out Button
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFFF0F0),
-                foregroundColor: Colors.redAccent,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-              onPressed: () async {
-                await FirebaseAuth.instance.signOut();
-                if (context.mounted) Navigator.pop(context);
+                );
               },
-              icon: const Icon(Icons.logout_rounded),
-              label: Text('Sign Out', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 15)),
             ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -901,7 +901,7 @@ class _MainNavigationScaffoldState extends State<MainNavigationScaffold> {
           });
         },
       ),
-      const GroundingAndBreathingScreen(),
+      const MeditationAndPostureScreen(),
       const AnalyticsDashboardScreen(),
       const PrivateVaultScreen(),
     ];
@@ -933,9 +933,9 @@ class _MainNavigationScaffoldState extends State<MainNavigationScaffold> {
               label: 'AI Chat',
             ),
             NavigationDestination(
-              icon: Icon(Icons.spa_outlined, color: Color(0xFF7A7287)),
-              selectedIcon: Icon(Icons.spa_rounded, color: Color(0xFF9C89B8)),
-              label: 'Grounding',
+              icon: Icon(Icons.self_improvement_outlined, color: Color(0xFF7A7287)),
+              selectedIcon: Icon(Icons.self_improvement_rounded, color: Color(0xFF9C89B8)),
+              label: 'Meditation',
             ),
             NavigationDestination(
               icon: Icon(Icons.insights_outlined, color: Color(0xFF7A7287)),
@@ -1211,16 +1211,16 @@ class HomeScreen extends StatelessWidget {
                     onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GamifiedArcadeScreen())),
                   ),
                   _FeatureTile(
-                    title: '5-4-3-2-1 Sensory',
-                    subtitle: 'Grounding Technique',
-                    icon: Icons.remove_red_eye_rounded,
+                    title: 'Meditation & Timer 🧘‍♀️',
+                    subtitle: 'Mindful Sessions',
+                    icon: Icons.self_improvement_rounded,
                     color: const Color(0xFF9C89B8),
                     onTap: () => onOpenTab?.call(2),
                   ),
                   _FeatureTile(
-                    title: 'Diaphragmatic',
-                    subtitle: 'Breathing Routine',
-                    icon: Icons.air_rounded,
+                    title: 'Body Posture 🪑',
+                    subtitle: 'Alignment Guide',
+                    icon: Icons.accessibility_new_rounded,
                     color: const Color(0xFF9C89B8),
                     onTap: () => onOpenTab?.call(2),
                   ),
@@ -1747,96 +1747,922 @@ class _TypingDotState extends State<_TypingDot> with SingleTickerProviderStateMi
 }
 
 // -----------------------------------------------------------------------------
-// 3. INTERACTIVE GROUNDING & DIAPHRAGMATIC BREATHING EXERCISES
+// 3. MINDFUL MEDITATION STUDIO & BODY POSTURE ALIGNMENT GUIDE
 // -----------------------------------------------------------------------------
-class GroundingAndBreathingScreen extends StatefulWidget {
-  const GroundingAndBreathingScreen({super.key});
+class MeditationAndPostureScreen extends StatefulWidget {
+  final int initialTab;
+  const MeditationAndPostureScreen({super.key, this.initialTab = 0});
 
   @override
-  State<GroundingAndBreathingScreen> createState() => _GroundingAndBreathingScreenState();
+  State<MeditationAndPostureScreen> createState() => _MeditationAndPostureScreenState();
 }
 
-class _GroundingAndBreathingScreenState extends State<GroundingAndBreathingScreen> with SingleTickerProviderStateMixin {
-  int _activeTab = 0; // 0: 5-4-3-2-1 Sensory Grounding, 1: Diaphragmatic Breathing
-  int _groundingStep = 0;
+class _MeditationAndPostureScreenState extends State<MeditationAndPostureScreen> with TickerProviderStateMixin {
+  late int _activeTab; // 0: Meditation & Timer, 1: Body Posture Guide, 2: 5-4-3-2-1 Reset
 
-  final List<Map<String, dynamic>> _sensorySteps = [
-    {'step': 5, 'sense': 'SEE', 'instruction': 'Acknowledge 5 things you can see around you.', 'icon': Icons.visibility_rounded},
-    {'step': 4, 'sense': 'TOUCH', 'instruction': 'Acknowledge 4 things you can physically feel/touch.', 'icon': Icons.back_hand_rounded},
-    {'step': 3, 'sense': 'HEAR', 'instruction': 'Acknowledge 3 distinct sounds in your environment.', 'icon': Icons.hearing_rounded},
-    {'step': 2, 'sense': 'SMELL', 'instruction': 'Acknowledge 2 scents or fresh air around you.', 'icon': Icons.air_rounded},
-    {'step': 1, 'sense': 'TASTE', 'instruction': 'Acknowledge 1 thing you can taste right now.', 'icon': Icons.restaurant_rounded},
+  // ---------------------------------------------------------------------------
+  // MEDITATION & TIMER STATE
+  // ---------------------------------------------------------------------------
+  late AnimationController _pulseController;
+  Timer? _sessionTimer;
+  Timer? _breathPhaseTimer;
+
+  int _selectedDurationMinutes = 5;
+  int _totalSecondsRemaining = 300;
+  bool _isSessionRunning = false;
+  bool _isSessionPaused = false;
+  int _completedCycles = 0;
+
+  String _currentTechnique = 'Box Breathing (4-4-4-4)';
+  String _breathPhase = 'Ready';
+  String _ambientSound = 'Zen Silence 🕊️';
+
+  final List<int> _durationOptions = [1, 3, 5, 10, 15, 20];
+  final List<String> _techniques = [
+    'Box Breathing (4-4-4-4)',
+    '4-7-8 Deep Calm',
+    'Mindful Presence',
+    'Loving-Kindness (Metta)',
   ];
 
-  late AnimationController _breathingController;
-  bool _isBreathingRunning = false;
+  final List<String> _ambientSounds = [
+    'Zen Silence 🕊️',
+    'Rain Drops 🌧️',
+    'Forest Stream 🌲',
+    'Tibetan Bowls 🔔',
+    'Ocean Waves 🌊',
+  ];
+
+  // ---------------------------------------------------------------------------
+  // BODY POSTURE STATE
+  // ---------------------------------------------------------------------------
+  int _selectedPostureIndex = 0;
+  final List<Map<String, dynamic>> _postures = [
+    {
+      'title': 'Easy Seated (Sukhasana)',
+      'emoji': '🧘',
+      'subtitle': 'Ideal for deep daily sitting & focused awareness',
+      'target': 'Spinal stability & deep breathing',
+      'cues': [
+        {'part': 'Spine & Back', 'icon': Icons.accessibility_rounded, 'desc': 'Sit tall with your spine erect like a stack of golden coins. Do not slouch or over-arch your lower back.'},
+        {'part': 'Shoulders & Chest', 'icon': Icons.airline_seat_recline_extra_rounded, 'desc': 'Roll shoulders up, back, and down. Keep chest open and broad to allow full lung capacity.'},
+        {'part': 'Hands & Mudra', 'icon': Icons.back_hand_rounded, 'desc': 'Rest wrists on knees in Gyan Mudra (tips of thumb and index finger touching gently) for focused awareness.'},
+        {'part': 'Head & Chin', 'icon': Icons.face_rounded, 'desc': 'Keep chin slightly tucked parallel to the ground. Relax your jaw, allowing teeth to separate naturally.'},
+        {'part': 'Legs & Hips', 'icon': Icons.airline_seat_legroom_extra_rounded, 'desc': 'Cross legs comfortably. If hips are tight, sit on a cushion so your knees rest lower than your hips.'},
+      ],
+    },
+    {
+      'title': 'Chair Posture (Desk & Office)',
+      'emoji': '🪑',
+      'subtitle': 'Perfect for workday stress relief without sitting on the floor',
+      'target': 'Alertness, posture correction & quick calm',
+      'cues': [
+        {'part': 'Feet & Ground', 'icon': Icons.sports_gymnastics_rounded, 'desc': 'Plant both feet completely flat on the floor, hip-width apart. Feel the grounding support of the earth.'},
+        {'part': 'Back & Spine', 'icon': Icons.accessibility_rounded, 'desc': 'Sit slightly forward away from the chair back. Let your core gently support an upright, self-sustaining spine.'},
+        {'part': 'Knees & Thighs', 'icon': Icons.airline_seat_legroom_extra_rounded, 'desc': 'Maintain a 90-degree angle at your knees with thighs parallel to the ground.'},
+        {'part': 'Hands & Arms', 'icon': Icons.back_hand_rounded, 'desc': 'Rest palms downward on thighs for grounding, or palms up with thumbs touching in Dhyana Mudra.'},
+        {'part': 'Eyes & Gaze', 'icon': Icons.visibility_rounded, 'desc': 'Close eyes softly or keep a gentle unfocused downward gaze 4 to 6 feet in front of you.'},
+      ],
+    },
+    {
+      'title': 'Savasana (Lying Down / Bedtime)',
+      'emoji': '🛌',
+      'subtitle': 'Best for acute anxiety, panic attacks & pre-sleep overthinking',
+      'target': 'Total somatic relaxation & nervous system reset',
+      'cues': [
+        {'part': 'Full Body Alignment', 'icon': Icons.bed_rounded, 'desc': 'Lie flat on your back on a mat or bed with spine in a straight, neutral line.'},
+        {'part': 'Arms & Palms', 'icon': Icons.back_hand_rounded, 'desc': 'Keep arms alongside body, about 6 inches away from hips, with palms turned upward.'},
+        {'part': 'Legs & Feet', 'icon': Icons.airline_seat_legroom_extra_rounded, 'desc': 'Let feet fall open naturally towards the sides, releasing all tension in hips and pelvis.'},
+        {'part': 'Neck & Head', 'icon': Icons.face_rounded, 'desc': 'Keep head centered without tilting. Smooth your forehead, relax eyelids, and let eye sockets soften.'},
+        {'part': 'Belly & Diaphragm', 'icon': Icons.air_rounded, 'desc': 'Place one hand on belly. Feel it rise effortlessly like a slow wave with every inhale.'},
+      ],
+    },
+    {
+      'title': 'Mindful Walking & Standing',
+      'emoji': '🚶',
+      'subtitle': 'For restless energy, ADHD hyperactivity & somatic tension',
+      'target': 'Kinesthetic mindfulness & moving grounding',
+      'cues': [
+        {'part': 'Weight Distribution', 'icon': Icons.sports_gymnastics_rounded, 'desc': 'Distribute weight evenly between both feet. Keep knees softly unlocked and bouncy.'},
+        {'part': 'Pacing & Movement', 'icon': Icons.directions_walk_rounded, 'desc': 'Walk slowly and deliberately. Notice the heel touching, rolling onto the ball, and lifting.'},
+        {'part': 'Arms & Hands', 'icon': Icons.back_hand_rounded, 'desc': 'Clasp hands gently in front of waist or let them hang naturally by your sides.'},
+        {'part': 'Breath Synchronization', 'icon': Icons.air_rounded, 'desc': 'Take 3 steps on the inhale, and 3 steps on the exhale. Match physical movement to breath rhythm.'},
+      ],
+    },
+  ];
+
+  // ---------------------------------------------------------------------------
+  // 5-4-3-2-1 SOMATIC GROUNDING STATE
+  // ---------------------------------------------------------------------------
+  int _groundingStep = 0;
+  final List<Map<String, dynamic>> _sensorySteps = [
+    {'step': 5, 'sense': 'SEE', 'instruction': 'Acknowledge 5 things you can visually see right now around you.', 'icon': Icons.visibility_rounded, 'color': Color(0xFF9C89B8)},
+    {'step': 4, 'sense': 'TOUCH', 'instruction': 'Acknowledge 4 physical textures you can feel (clothing, chair, air on skin).', 'icon': Icons.back_hand_rounded, 'color': Color(0xFF7A7287)},
+    {'step': 3, 'sense': 'HEAR', 'instruction': 'Acknowledge 3 distinct sounds in your current environment.', 'icon': Icons.hearing_rounded, 'color': Color(0xFF9C89B8)},
+    {'step': 2, 'sense': 'SMELL', 'instruction': 'Acknowledge 2 scents or take a fresh breath of air.', 'icon': Icons.air_rounded, 'color': Color(0xFF7A7287)},
+    {'step': 1, 'sense': 'TASTE', 'instruction': 'Acknowledge 1 pleasant taste or drink a mindful sip of water.', 'icon': Icons.restaurant_rounded, 'color': Color(0xFF9C89B8)},
+  ];
 
   @override
   void initState() {
     super.initState();
-    _breathingController = AnimationController(vsync: this, duration: const Duration(seconds: 4));
+    _activeTab = widget.initialTab.clamp(0, 2);
+    _totalSecondsRemaining = _selectedDurationMinutes * 60;
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    );
   }
 
   @override
   void dispose() {
-    _breathingController.dispose();
+    _sessionTimer?.cancel();
+    _breathPhaseTimer?.cancel();
+    _pulseController.dispose();
     super.dispose();
+  }
+
+  // ---------------------------------------------------------------------------
+  // TIMER & BREATH ENGINE
+  // ---------------------------------------------------------------------------
+  void _startMeditationSession() {
+    setState(() {
+      _isSessionRunning = true;
+      _isSessionPaused = false;
+      if (_totalSecondsRemaining == 0) {
+        _totalSecondsRemaining = _selectedDurationMinutes * 60;
+      }
+    });
+
+    _pulseController.repeat(reverse: true);
+    _runBreathingCycle();
+
+    _sessionTimer?.cancel();
+    _sessionTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_totalSecondsRemaining > 0) {
+        setState(() {
+          _totalSecondsRemaining--;
+        });
+      } else {
+        _finishMeditationSession();
+      }
+    });
+  }
+
+  void _runBreathingCycle() {
+    _breathPhaseTimer?.cancel();
+    if (!_isSessionRunning) return;
+
+    if (_currentTechnique.startsWith('Box')) {
+      // Box Breathing: Inhale 4s -> Hold 4s -> Exhale 4s -> Hold 4s
+      int phase = 0;
+      _updateBoxPhase(phase);
+      _breathPhaseTimer = Timer.periodic(const Duration(seconds: 4), (t) {
+        if (!_isSessionRunning || _isSessionPaused) return;
+        phase = (phase + 1) % 4;
+        _updateBoxPhase(phase);
+        if (phase == 0 && mounted) {
+          setState(() => _completedCycles++);
+        }
+      });
+    } else if (_currentTechnique.startsWith('4-7-8')) {
+      // 4-7-8 Breathing: Inhale 4s -> Hold 7s -> Exhale 8s
+      _run478Loop();
+    } else {
+      // Mindful Presence: Smooth 4s Inhale, 4s Exhale
+      int phase = 0;
+      setState(() => _breathPhase = 'Inhale Gently 🌬️');
+      _breathPhaseTimer = Timer.periodic(const Duration(seconds: 4), (t) {
+        if (!_isSessionRunning || _isSessionPaused) return;
+        phase = (phase + 1) % 2;
+        setState(() {
+          _breathPhase = phase == 0 ? 'Inhale Gently 🌬️' : 'Release & Exhale 🍃';
+          if (phase == 0) _completedCycles++;
+        });
+      });
+    }
+  }
+
+  void _updateBoxPhase(int phase) {
+    if (!mounted) return;
+    setState(() {
+      switch (phase) {
+        case 0:
+          _breathPhase = 'Inhale (4s) 🌬️';
+          break;
+        case 1:
+          _breathPhase = 'Hold Breath (4s) ⏸️';
+          break;
+        case 2:
+          _breathPhase = 'Exhale Slowly (4s) 🍃';
+          break;
+        case 3:
+          _breathPhase = 'Rest in Stillness (4s) ✨';
+          break;
+      }
+    });
+  }
+
+  void _run478Loop() async {
+    while (_isSessionRunning && !_isSessionPaused && mounted) {
+      setState(() => _breathPhase = 'Inhale through nose (4s) 🌬️');
+      await Future.delayed(const Duration(seconds: 4));
+      if (!_isSessionRunning || _isSessionPaused || !mounted) break;
+
+      setState(() => _breathPhase = 'Hold gently (7s) ⏸️');
+      await Future.delayed(const Duration(seconds: 7));
+      if (!_isSessionRunning || _isSessionPaused || !mounted) break;
+
+      setState(() => _breathPhase = 'Whoosh Exhale (8s) 💨');
+      await Future.delayed(const Duration(seconds: 8));
+      if (!_isSessionRunning || _isSessionPaused || !mounted) break;
+
+      if (mounted) setState(() => _completedCycles++);
+    }
+  }
+
+  void _pauseMeditationSession() {
+    setState(() {
+      _isSessionPaused = true;
+      _isSessionRunning = false;
+      _breathPhase = 'Paused ⏸️';
+    });
+    _sessionTimer?.cancel();
+    _breathPhaseTimer?.cancel();
+    _pulseController.stop();
+  }
+
+  void _resetMeditationSession() {
+    setState(() {
+      _isSessionRunning = false;
+      _isSessionPaused = false;
+      _totalSecondsRemaining = _selectedDurationMinutes * 60;
+      _completedCycles = 0;
+      _breathPhase = 'Ready to Begin';
+    });
+    _sessionTimer?.cancel();
+    _breathPhaseTimer?.cancel();
+    _pulseController.reset();
+  }
+
+  void _finishMeditationSession() {
+    _sessionTimer?.cancel();
+    _breathPhaseTimer?.cancel();
+    _pulseController.stop();
+
+    setState(() {
+      _isSessionRunning = false;
+      _isSessionPaused = false;
+      _totalSecondsRemaining = _selectedDurationMinutes * 60;
+      _breathPhase = 'Session Complete! 🎉';
+    });
+
+    if (mounted) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          backgroundColor: Colors.white,
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: const Color(0xFFF0E6EF), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.self_improvement_rounded, color: Color(0xFF9C89B8), size: 28),
+              ),
+              const SizedBox(width: 12),
+              Text('Peace Restored ✨', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'You completed $_selectedDurationMinutes minutes of mindful meditation ($completedCyclesText).',
+                style: GoogleFonts.plusJakartaSans(fontSize: 14, color: Colors.black87),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF9F7FA),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFF0E6EF)),
+                ),
+                child: Text(
+                  '“Feelings come and go like clouds in a windy sky. Conscious breathing is your anchor.” — Thich Nhat Hanh',
+                  style: GoogleFonts.plusJakartaSans(fontSize: 12, fontStyle: FontStyle.italic, color: const Color(0xFF7A7287)),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF9C89B8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              onPressed: () => Navigator.pop(context),
+              child: Text('Carry Peace Forward 🌸', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: Colors.white)),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  String get completedCyclesText => '$_completedCycles breath cycle${_completedCycles == 1 ? '' : 's'}';
+
+  String _formatTime(int totalSecs) {
+    final m = totalSecs ~/ 60;
+    final s = totalSecs % 60;
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFFFFFF),
       appBar: AppBar(
         backgroundColor: const Color(0xFFFFFFFF),
         elevation: 0,
-        title: Text('Grounding & Breathing', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: Colors.black)),
+        title: Text(
+          'Meditation & Mindfulness Studio 🧘‍♀️',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 19),
+        ),
       ),
       body: Column(
         children: [
+          // Segment Navigation Bar
           Container(
-            margin: const EdgeInsets.all(16),
-            decoration: BoxDecoration(color: const Color(0xFFF0E6EF), borderRadius: BorderRadius.circular(16)),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0E6EF),
+              borderRadius: BorderRadius.circular(18),
+            ),
             child: Row(
               children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _activeTab = 0),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _activeTab == 0 ? const Color(0xFF9C89B8) : Colors.transparent,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text('5-4-3-2-1 Sensory', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: _activeTab == 0 ? Colors.white : Colors.black)),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _activeTab = 1),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _activeTab == 1 ? const Color(0xFF9C89B8) : Colors.transparent,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text('Diaphragmatic', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, color: _activeTab == 1 ? Colors.white : Colors.black)),
-                    ),
-                  ),
-                ),
+                _buildSegmentButton(index: 0, label: 'Timer Studio ⏱️', icon: Icons.timer_outlined),
+                _buildSegmentButton(index: 1, label: 'Body Posture 🪑', icon: Icons.self_improvement_rounded),
+                _buildSegmentButton(index: 2, label: '5-4-3-2-1 Reset 🌿', icon: Icons.spa_outlined),
               ],
             ),
           ),
           Expanded(
-            child: _activeTab == 0 ? _buildSensoryGroundingView() : _buildDiaphragmaticBreathingView(),
+            child: IndexedStack(
+              index: _activeTab,
+              children: [
+                _buildMeditationTimerView(),
+                _buildPostureGuideView(),
+                _buildSensoryGroundingView(),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
+  Widget _buildSegmentButton({required int index, required String label, required IconData icon}) {
+    final isSelected = _activeTab == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _activeTab = index),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF9C89B8) : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: isSelected
+                ? [BoxShadow(color: const Color(0xFF9C89B8).withValues(alpha: 0.3), blurRadius: 6, offset: const Offset(0, 2))]
+                : null,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.plusJakartaSans(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: isSelected ? Colors.white : const Color(0xFF2C2543),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ===========================================================================
+  // TAB 0: MEDITATION STUDIO & PULSING TIMER
+  // ===========================================================================
+  Widget _buildMeditationTimerView() {
+    final totalDuration = _selectedDurationMinutes * 60;
+    final progress = totalDuration > 0 ? (totalDuration - _totalSecondsRemaining) / totalDuration : 0.0;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Column(
+        children: [
+          // Technique selector Dropdown
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9F7FA),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFF0E6EF)),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _currentTechnique,
+                isExpanded: true,
+                icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF9C89B8)),
+                items: _techniques
+                    .map((t) => DropdownMenuItem(
+                          value: t,
+                          child: Text(
+                            t,
+                            style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black),
+                          ),
+                        ))
+                    .toList(),
+                onChanged: _isSessionRunning
+                    ? null
+                    : (val) {
+                        if (val != null) {
+                          setState(() => _currentTechnique = val);
+                          _resetMeditationSession();
+                        }
+                      },
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Duration Pills Selector
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: _durationOptions.map((mins) {
+              final isSelected = _selectedDurationMinutes == mins;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: FilterChip(
+                  label: Text('${mins}m', style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500)),
+                  selected: isSelected,
+                  selectedColor: const Color(0xFF9C89B8),
+                  backgroundColor: const Color(0xFFF0E6EF),
+                  checkmarkColor: Colors.white,
+                  labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  onSelected: _isSessionRunning
+                      ? null
+                      : (val) {
+                          setState(() {
+                            _selectedDurationMinutes = mins;
+                            _totalSecondsRemaining = mins * 60;
+                          });
+                        },
+                ),
+              );
+            }).toList(),
+          ),
+
+          const SizedBox(height: 24),
+
+          // HYPNOTIC BREATHING ORB & CIRCULAR COUNTDOWN TIMER
+          Center(
+            child: SizedBox(
+              width: 250,
+              height: 250,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Outer Circular Progress Ring
+                  SizedBox(
+                    width: 240,
+                    height: 240,
+                    child: CircularProgressIndicator(
+                      value: progress.clamp(0.0, 1.0),
+                      strokeWidth: 6,
+                      backgroundColor: const Color(0xFFF0E6EF),
+                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF9C89B8)),
+                    ),
+                  ),
+
+                  // Concentric Expanding Halo Animation
+                  AnimatedBuilder(
+                    animation: _pulseController,
+                    builder: (context, child) {
+                      final scale = _isSessionRunning ? 1.0 + (_pulseController.value * 0.28) : 1.0;
+                      final opacity = _isSessionRunning ? 0.35 + (_pulseController.value * 0.35) : 0.2;
+
+                      return Transform.scale(
+                        scale: scale,
+                        child: Container(
+                          width: 175,
+                          height: 175,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                const Color(0xFF9C89B8).withValues(alpha: opacity),
+                                const Color(0xFFF0E6EF).withValues(alpha: 0.1),
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF9C89B8).withValues(alpha: opacity * 0.5),
+                                blurRadius: 35,
+                                spreadRadius: 8,
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+
+                  // Center Core Time Display
+                  Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF9C89B8).withValues(alpha: 0.2),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.self_improvement_rounded, color: Color(0xFF9C89B8), size: 28),
+                        const SizedBox(height: 2),
+                        Text(
+                          _formatTime(_totalSecondsRemaining),
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                            letterSpacing: 1.1,
+                          ),
+                        ),
+                        Text(
+                          _isSessionRunning ? 'Cycle: $_completedCycles' : 'Duration',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 11, color: const Color(0xFF7A7287)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // Real-time Breathing Instruction Prompt
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0E6EF),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              _breathPhase,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF2C2543),
+              ),
+            ),
+          ).animate().fadeIn(),
+
+          const SizedBox(height: 28),
+
+          // Control Buttons
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (_isSessionRunning || _isSessionPaused) ...[
+                IconButton.filledTonal(
+                  style: IconButton.styleFrom(backgroundColor: const Color(0xFFF0E6EF), padding: const EdgeInsets.all(14)),
+                  icon: const Icon(Icons.refresh_rounded, color: Color(0xFF7A7287)),
+                  tooltip: 'Reset Timer',
+                  onPressed: _resetMeditationSession,
+                ),
+                const SizedBox(width: 20),
+              ],
+              SizedBox(
+                height: 56,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF9C89B8),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
+                    elevation: 3,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                  ),
+                  onPressed: _isSessionRunning ? _pauseMeditationSession : _startMeditationSession,
+                  icon: Icon(_isSessionRunning ? Icons.pause_rounded : Icons.play_arrow_rounded, size: 26),
+                  label: Text(
+                    _isSessionRunning
+                        ? 'Pause Session'
+                        : (_isSessionPaused ? 'Resume Session' : 'Start Meditation'),
+                    style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 28),
+
+          // Ambient Background Sound Picker
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFF0E6EF)),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2)),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.music_note_rounded, color: Color(0xFF9C89B8), size: 20),
+                    const SizedBox(width: 8),
+                    Text('Ambient Soundscape:', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black)),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _ambientSounds.map((snd) {
+                      final isSel = _ambientSound == snd;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(snd, style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: isSel ? FontWeight.bold : FontWeight.normal)),
+                          selected: isSel,
+                          selectedColor: const Color(0xFF9C89B8),
+                          backgroundColor: const Color(0xFFF9F7FA),
+                          labelStyle: TextStyle(color: isSel ? Colors.white : Colors.black),
+                          onSelected: (val) {
+                            if (val) setState(() => _ambientSound = snd);
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ===========================================================================
+  // TAB 1: BODY POSTURE & ALIGNMENT GUIDE
+  // ===========================================================================
+  Widget _buildPostureGuideView() {
+    final posture = _postures[_selectedPostureIndex];
+    final cues = posture['cues'] as List<Map<String, dynamic>>;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Choose Your Meditation Posture 🧘‍♂️',
+            style: GoogleFonts.plusJakartaSans(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Correct body alignment relaxes the nervous system and frees the diaphragm for deep breath flow.',
+            style: GoogleFonts.plusJakartaSans(fontSize: 12, color: const Color(0xFF7A7287)),
+          ),
+          const SizedBox(height: 16),
+
+          // Posture Selectors Horizontal Carousel
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: _postures.asMap().entries.map((entry) {
+                final idx = entry.key;
+                final p = entry.value;
+                final isSelected = _selectedPostureIndex == idx;
+
+                return GestureDetector(
+                  onTap: () => setState(() => _selectedPostureIndex = idx),
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isSelected ? const Color(0xFF9C89B8) : const Color(0xFFF9F7FA),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: isSelected ? const Color(0xFF9C89B8) : const Color(0xFFF0E6EF)),
+                      boxShadow: isSelected
+                          ? [BoxShadow(color: const Color(0xFF9C89B8).withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))]
+                          : null,
+                    ),
+                    child: Row(
+                      children: [
+                        Text(p['emoji'] as String, style: const TextStyle(fontSize: 20)),
+                        const SizedBox(width: 8),
+                        Text(
+                          p['title'] as String,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: isSelected ? Colors.white : Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Selected Posture Highlight Card
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF9C89B8), Color(0xFF7A7287)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(color: const Color(0xFF9C89B8).withValues(alpha: 0.35), blurRadius: 12, offset: const Offset(0, 4)),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
+                      child: Text(posture['emoji'] as String, style: const TextStyle(fontSize: 32)),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            posture['title'] as String,
+                            style: GoogleFonts.plusJakartaSans(fontSize: 17, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            posture['subtitle'] as String,
+                            style: GoogleFonts.plusJakartaSans(fontSize: 12, color: Colors.white.withValues(alpha: 0.9)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.track_changes_rounded, color: Colors.white, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Primary Benefit: ${posture['target']}',
+                          style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ).animate().fadeIn().scale(begin: const Offset(0.97, 0.97)),
+
+          const SizedBox(height: 24),
+
+          Text(
+            'Step-by-Step Alignment Checklist 📐',
+            style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+          ),
+          const SizedBox(height: 12),
+
+          // Detailed Alignment Checklist Cards
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: cues.length,
+            separatorBuilder: (c, i) => const SizedBox(height: 12),
+            itemBuilder: (context, idx) {
+              final cue = cues[idx];
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFF0E6EF)),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 6, offset: const Offset(0, 2)),
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0E6EF),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(cue['icon'] as IconData, color: const Color(0xFF9C89B8), size: 22),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            cue['part'] as String,
+                            style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            cue['desc'] as String,
+                            style: GoogleFonts.plusJakartaSans(fontSize: 12, color: const Color(0xFF7A7287), height: 1.4),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+
+          const SizedBox(height: 24),
+
+          // Quick Start Timer with Posture Button
+          SizedBox(
+            width: double.infinity,
+            height: 52,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF9C89B8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              onPressed: () {
+                setState(() => _activeTab = 0);
+                _startMeditationSession();
+              },
+              icon: const Icon(Icons.play_arrow_rounded, color: Colors.white),
+              label: Text(
+                'Start Timer in this Posture ✨',
+                style: GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ===========================================================================
+  // TAB 2: SOMATIC 5-4-3-2-1 SENSORY GROUNDING
+  // ===========================================================================
   Widget _buildSensoryGroundingView() {
     final current = _sensorySteps[_groundingStep];
     return Padding(
@@ -1844,15 +2670,22 @@ class _GroundingAndBreathingScreenState extends State<GroundingAndBreathingScree
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircleAvatar(
-            radius: 50,
-            backgroundColor: const Color(0xFFF0E6EF),
-            child: Icon(current['icon'], size: 50, color: const Color(0xFF9C89B8)),
-          ),
+          Container(
+            width: 90,
+            height: 90,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0E6EF),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(color: const Color(0xFF9C89B8).withValues(alpha: 0.3), blurRadius: 16, offset: const Offset(0, 4)),
+              ],
+            ),
+            child: Icon(current['icon'] as IconData, size: 44, color: const Color(0xFF9C89B8)),
+          ).animate().scale().fadeIn(),
           const SizedBox(height: 24),
           Text(
             'STEP ${_groundingStep + 1} OF 5',
-            style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF7A7287)),
+            style: GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.bold, color: const Color(0xFF7A7287), letterSpacing: 1.2),
           ),
           const SizedBox(height: 8),
           Text(
@@ -1862,23 +2695,31 @@ class _GroundingAndBreathingScreenState extends State<GroundingAndBreathingScree
           ),
           const SizedBox(height: 12),
           Text(
-            current['instruction'],
+            current['instruction'] as String,
             textAlign: TextAlign.center,
-            style: GoogleFonts.plusJakartaSans(fontSize: 14, color: Colors.black87),
+            style: GoogleFonts.plusJakartaSans(fontSize: 14, color: Colors.black87, height: 1.4),
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: 36),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (_groundingStep > 0)
+              if (_groundingStep > 0) ...[
                 OutlinedButton(
                   onPressed: () => setState(() => _groundingStep--),
-                  style: OutlinedButton.styleFrom(side: const BorderSide(color: Color(0xFF9C89B8))),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFF9C89B8)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  ),
                   child: const Text('Previous', style: TextStyle(color: Colors.black)),
                 ),
-              const SizedBox(width: 16),
+                const SizedBox(width: 16),
+              ],
               ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF9C89B8)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF9C89B8),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
                 onPressed: () {
                   setState(() {
                     if (_groundingStep < _sensorySteps.length - 1) {
@@ -1886,7 +2727,11 @@ class _GroundingAndBreathingScreenState extends State<GroundingAndBreathingScree
                     } else {
                       _groundingStep = 0;
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('5-4-3-2-1 Sensory Grounding Complete! ✨', style: TextStyle(color: Colors.black)), backgroundColor: Color(0xFFF0E6EF)),
+                        const SnackBar(
+                          content: Text('5-4-3-2-1 Sensory Grounding Complete! Peace restored. ✨', style: TextStyle(color: Colors.black)),
+                          backgroundColor: Color(0xFFF0E6EF),
+                          behavior: SnackBarBehavior.floating,
+                        ),
                       );
                     }
                   });
@@ -1898,76 +2743,6 @@ class _GroundingAndBreathingScreenState extends State<GroundingAndBreathingScree
                 ),
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDiaphragmaticBreathingView() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AnimatedBuilder(
-            animation: _breathingController,
-            builder: (context, child) {
-              final scale = 1.0 + (_breathingController.value * 0.4);
-              return Transform.scale(
-                scale: scale,
-                child: Container(
-                  width: 180,
-                  height: 180,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        const Color(0xFF9C89B8).withValues(alpha: 0.8),
-                        const Color(0xFFF0E6EF).withValues(alpha: 0.2),
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF9C89B8).withValues(alpha: 0.3 * _breathingController.value),
-                        blurRadius: 30,
-                        spreadRadius: 10,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(Icons.air_rounded, size: 70, color: Colors.white),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 40),
-          Text(
-            _isBreathingRunning ? 'Deep Belly Breathing...' : 'Diaphragmatic Breathing',
-            style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Breathe deep into belly • Inhale 4s • Exhale 4s',
-            style: GoogleFonts.plusJakartaSans(color: Colors.black54),
-          ),
-          const SizedBox(height: 36),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF9C89B8),
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-            ),
-            onPressed: () {
-              setState(() {
-                if (_isBreathingRunning) {
-                  _breathingController.stop();
-                  _isBreathingRunning = false;
-                } else {
-                  _breathingController.repeat(reverse: true);
-                  _isBreathingRunning = true;
-                }
-              });
-            },
-            icon: Icon(_isBreathingRunning ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white),
-            label: Text(_isBreathingRunning ? 'Pause Routine' : 'Start Diaphragmatic Routine', style: GoogleFonts.plusJakartaSans(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
